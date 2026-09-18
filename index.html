@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astra APCSA</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 6 L54 54 H42 L32 30 L22 54 H10 Z' fill='%231a3a7a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<style>
+  :root{
+    --navy:#0d1b3e;
+    --blue-900:#12224f;
+    --blue-700:#1a3a7a;
+    --blue-600:#2148a0;
+    --blue-500:#2f5fd1;
+    --blue-300:#8fb0f2;
+    --blue-100:#e8effc;
+    --bg:#f4f7fd;
+    --card:#ffffff;
+    --text:#152042;
+    --muted:#5b6786;
+    --danger:#c0392b;
+    --good:#1f9d55;
+    --radius:14px;
+    --shadow:0 4px 18px rgba(20,40,90,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Inter',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--blue-600);}
+
+  /* HEADER */
+  header{
+    background:linear-gradient(120deg,var(--navy) 0%,var(--blue-700) 60%,var(--blue-500) 100%);
+    color:#fff;
+    padding:0;
+    position:sticky;
+    top:0;
+    z-index:50;
+    box-shadow:0 2px 14px rgba(10,20,50,0.25);
+  }
+  .header-inner{
+    max-width:1100px;
+    margin:0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 20px;
+    gap:16px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand svg{width:34px;height:34px;display:block;}
+  .brand-text{display:flex;flex-direction:column;line-height:1.1;}
+  .brand-text .name{font-weight:800;font-size:1.15rem;letter-spacing:0.3px;}
+  .brand-text .sub{font-size:0.72rem;color:var(--blue-300);font-weight:500;letter-spacing:0.5px;text-transform:uppercase;}
+
+  nav{display:flex;gap:6px;align-items:center;}
+  nav button.tab{
+    background:transparent;border:none;color:#dbe6ff;
+    font-family:inherit;font-weight:600;font-size:0.92rem;
+    padding:9px 14px;border-radius:999px;cursor:pointer;
+    transition:background .15s, color .15s;
+  }
+  nav button.tab:hover{background:rgba(255,255,255,0.1);}
+  nav button.tab.active{background:#fff;color:var(--blue-700);}
+
+  .admin-area{display:flex;align-items:center;gap:10px;}
+  .btn{
+    font-family:inherit;font-weight:600;font-size:0.88rem;
+    border-radius:10px;border:none;padding:9px 16px;cursor:pointer;
+    transition:transform .1s, filter .15s;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:var(--blue-500);color:#fff;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:rgba(255,255,255,0.12);color:#fff;}
+  .btn-ghost:hover{background:rgba(255,255,255,0.22);}
+  .btn-outline{background:#fff;color:var(--blue-700);border:1.5px solid var(--blue-500);}
+  .btn-outline:hover{background:var(--blue-100);}
+  .btn-danger{background:#fff0ee;color:var(--danger);}
+  .btn-danger:hover{background:#ffe1dd;}
+  .btn-sm{padding:6px 11px;font-size:0.8rem;border-radius:8px;}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;}
+
+  main{max-width:1100px;margin:0 auto;padding:28px 20px 80px;}
+  .view{display:none;}
+  .view.active{display:block;animation:fadeIn .25s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  .page-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+  .page-title h1{font-size:1.5rem;margin:0;color:var(--navy);}
+  .page-title p{margin:2px 0 0;color:var(--muted);font-size:0.92rem;}
+
+  section.block{margin-bottom:36px;}
+  .block-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .block-header h2{font-size:1.15rem;margin:0;color:var(--blue-700);}
+
+  .card{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:18px 20px;
+    margin-bottom:14px;
+    border:1px solid rgba(20,40,90,0.05);
+  }
+  .card-title-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .card h3{margin:0 0 6px;font-size:1.02rem;color:var(--navy);}
+  .card .meta{font-size:0.78rem;color:var(--muted);margin-bottom:8px;}
+  .card .body{font-size:0.92rem;line-height:1.5;color:var(--text);white-space:pre-wrap;}
+  .card-actions{display:flex;gap:6px;flex-shrink:0;}
+
+  .empty{color:var(--muted);font-size:0.9rem;padding:18px;text-align:center;background:#fff;border-radius:var(--radius);border:1px dashed #c9d6f2;}
+
+  .units-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;}
+  .unit-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;border:1px solid rgba(20,40,90,0.05);}
+  .unit-head{background:linear-gradient(120deg,var(--blue-700),var(--blue-500));color:#fff;padding:14px 16px;}
+  .unit-head .u-num{font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--blue-100);font-weight:600;}
+  .unit-head .u-title{font-size:1.02rem;font-weight:700;margin-top:2px;}
+  .unit-body{padding:14px 16px;}
+  .unit-body ul{margin:0;padding-left:18px;font-size:0.88rem;line-height:1.6;color:var(--text);}
+  .unit-body ul li{margin-bottom:2px;}
+  .unit-foot{padding:10px 16px 16px;display:flex;justify-content:flex-end;}
+
+  table.roster{width:100%;border-collapse:collapse;font-size:0.9rem;}
+  table.roster th, table.roster td{text-align:left;padding:9px 8px;border-bottom:1px solid #eef1fb;}
+  table.roster th{color:var(--muted);font-weight:600;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.4px;}
+  .att-row{cursor:pointer;}
+  .att-row:hover{background:var(--blue-100);}
+  .pill{display:inline-block;font-size:0.74rem;font-weight:700;padding:3px 10px;border-radius:999px;}
+  .pill.final{background:#e6f7ec;color:var(--good);}
+  .pill.draft{background:#fff4e0;color:#b5760c;}
+
+  input[type=text], input[type=password], input[type=url], input[type=date], textarea{
+    width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid #d8e0f5;
+    font-family:inherit;font-size:0.92rem;background:#fbfcff;color:var(--text);
+  }
+  input:focus, textarea:focus{outline:none;border-color:var(--blue-500);background:#fff;}
+  label.field-label{display:block;font-size:0.8rem;font-weight:600;color:var(--muted);margin:12px 0 5px;}
+  label.field-label:first-child{margin-top:0;}
+
+  /* modal */
+  .overlay{
+    position:fixed;inset:0;background:rgba(10,18,40,0.45);
+    display:none;align-items:center;justify-content:center;z-index:200;padding:16px;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    position:relative;
+    background:#fff;border-radius:16px;max-width:480px;width:100%;
+    max-height:88vh;overflow-y:auto;padding:26px 24px 22px;box-shadow:0 20px 60px rgba(10,20,50,0.3);
+  }
+  .modal.wide{max-width:640px;}
+  .modal h3{margin:0 0 4px;color:var(--navy);padding-right:26px;}
+  .modal p.sub{margin:0 0 14px;color:var(--muted);font-size:0.85rem;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+  .modal-close{
+    position:absolute;top:14px;right:14px;
+    width:30px;height:30px;border-radius:50%;
+    background:#eef1fb;border:none;
+    font-size:0.85rem;font-weight:700;color:var(--muted);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;
+    transition:background .15s, color .15s;
+  }
+  .modal-close:hover{background:var(--blue-100);color:var(--blue-700);}
+
+  .checklist{list-style:none;margin:0;padding:0;max-height:340px;overflow-y:auto;border:1px solid #eef1fb;border-radius:10px;}
+  .checklist li{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #f2f4fb;font-size:0.94rem;}
+  .checklist li:last-child{border-bottom:none;}
+  .checklist input[type=checkbox]{width:18px;height:18px;accent-color:var(--blue-500);}
+  .checklist .name{flex:1;}
+
+  .roster-manage-list{list-style:none;margin:0;padding:0;}
+  .roster-manage-list li{display:flex;justify-content:space-between;align-items:center;padding:8px 4px;border-bottom:1px solid #f2f4fb;font-size:0.9rem;}
+
+  .login-hint{position:fixed;bottom:14px;right:16px;font-size:0.7rem;color:var(--muted);opacity:0.6;}
+  .toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:var(--navy);color:#fff;padding:11px 20px;border-radius:10px;
+    font-size:0.88rem;box-shadow:0 8px 24px rgba(0,0,0,0.25);z-index:400;
+    opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+  .stat-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+  .stat{background:#fff;border-radius:12px;padding:12px 16px;box-shadow:var(--shadow);flex:1;min-width:120px;}
+  .stat .num{font-size:1.4rem;font-weight:800;color:var(--blue-700);}
+  .stat .label{font-size:0.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+
+  /* three-dot dropdown menu, used instead of scattering Edit/Delete buttons everywhere */
+  .dot-menu{position:relative;flex-shrink:0;}
+  .dot-menu-btn{
+    background:#eef1fb;border:none;width:30px;height:30px;border-radius:50%;
+    font-size:1.15rem;line-height:1;color:var(--muted);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;
+  }
+  .dot-menu-btn:hover{background:var(--blue-100);color:var(--blue-700);}
+  .dot-menu-list{
+    position:absolute;top:36px;right:0;background:#fff;border-radius:10px;
+    box-shadow:0 10px 28px rgba(20,40,90,0.2);border:1px solid #eef1fb;
+    min-width:140px;display:none;z-index:60;overflow:hidden;
+  }
+  .dot-menu-list.show{display:block;}
+  .dot-menu-list button{
+    display:block;width:100%;text-align:left;background:none;border:none;
+    padding:10px 14px;font-size:0.86rem;font-family:inherit;color:var(--text);cursor:pointer;
+  }
+  .dot-menu-list button:hover{background:var(--blue-100);}
+  .dot-menu-list button.danger{color:var(--danger);}
+  .dot-menu-list button.danger:hover{background:#fdeceb;}
+
+  @media(max-width:640px){
+    .header-inner{flex-wrap:wrap;}
+    nav{order:3;width:100%;justify-content:flex-start;overflow-x:auto;}
+    .brand-text .sub{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#8fb0f2"/>
+            <stop offset="1" stop-color="#0d1b3e"/>
+          </linearGradient>
+        </defs>
+        <path d="M32 6 L54 54 H43 L32 28 L21 54 H10 Z" fill="url(#g1)"/>
+        <path d="M14 46 C24 36, 38 40, 48 30" stroke="#8fb0f2" stroke-width="4" stroke-linecap="round" fill="none"/>
+        <path d="M6 18 L7.6 21.6 L11.2 23.2 L7.6 24.8 L6 28.4 L4.4 24.8 L0.8 23.2 L4.4 21.6 Z" fill="#8fb0f2" transform="translate(8,0)"/>
+      </svg>
+      <div class="brand-text">
+        <span class="name">Astra APCSA</span>
+        <span class="sub">Self-Study Companion</span>
+      </div>
+    </div>
+    <nav>
+      <button class="tab active" data-view="home">Home</button>
+      <button class="tab" data-view="course">Course</button>
+      <button class="tab" data-view="attendance">Attendance</button>
+    </nav>
+    <div class="admin-area" id="adminArea">
+      <button class="btn btn-ghost" id="loginBtn">Admin Login</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- HOME -->
+  <div class="view active" id="view-home">
+    <div class="page-title">
+      <div>
+        <h1>Welcome to Astra APCSA</h1>
+        <p>News, announcements, and helpful materials for AP CSA self-study.</p>
+      </div>
+    </div>
+
+    <section class="block">
+      <div class="block-header">
+        <h2>📰 News &amp; Announcements</h2>
+        <button class="btn btn-primary btn-sm admin-only" id="addNewsBtn" style="display:none;">+ Add News</button>
+      </div>
+      <div id="newsList"><div class="empty">Loading…</div></div>
+    </section>
+
+    <section class="block">
+      <div class="block-header">
+        <h2>📚 Helpful Materials</h2>
+        <button class="btn btn-primary btn-sm admin-only" id="addMaterialBtn" style="display:none;">+ Add Material</button>
+      </div>
+      <div id="materialsList"><div class="empty">Loading…</div></div>
+    </section>
+  </div>
+
+  <!-- COURSE -->
+  <div class="view" id="view-course">
+    <div class="page-title">
+      <div>
+        <h1>AP CSA Course Units</h1>
+        <p>The four core units, with the specific topics under each.</p>
+      </div>
+    </div>
+    <div class="units-grid" id="unitsGrid"><div class="empty">Loading…</div></div>
+  </div>
+
+  <!-- ATTENDANCE -->
+  <div class="view" id="view-attendance">
+    <div class="page-title">
+      <div>
+        <h1>Attendance</h1>
+        <p>Daily attendance log, timestamped in Central Time.</p>
+      </div>
+      <div class="admin-only" style="display:none;">
+        <button class="btn btn-outline btn-sm" id="manageRosterBtn">Manage Students</button>
+        <button class="btn btn-primary btn-sm" id="newAttendanceBtn">+ New Attendance</button>
+      </div>
+    </div>
+    <div class="stat-row" id="attendanceStats"></div>
+
+    <div class="card" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <label style="font-weight:600;font-size:0.85rem;color:var(--muted);white-space:nowrap;">🔍 Look up a student</label>
+      <input type="text" id="studentSearchInput" list="studentSearchList" placeholder="Type a student's name…" style="max-width:260px;">
+      <datalist id="studentSearchList"></datalist>
+      <button class="btn btn-outline btn-sm" id="studentSearchBtn">View History</button>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table class="roster">
+        <thead><tr><th>Date</th><th>Time (CT)</th><th>Present</th><th>Status</th><th></th></tr></thead>
+        <tbody id="attendanceBody"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<div class="login-hint">Astra APCSA</div>
+
+<!-- LOGIN MODAL -->
+<div class="overlay" id="loginOverlay">
+  <div class="modal">
+    <button class="modal-close" data-close="loginOverlay">✕</button>
+    <h3>Admin Login</h3>
+    <p class="sub">Only the course admin can sign in here.</p>
+    <label class="field-label">Username</label>
+    <input type="text" id="loginUser" autocomplete="off">
+    <label class="field-label">Password</label>
+    <input type="password" id="loginPass" autocomplete="off">
+    <p id="loginError" style="color:#c0392b;font-size:0.82rem;display:none;margin-top:10px;">Incorrect username or password.</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" data-close="loginOverlay">Cancel</button>
+      <button class="btn btn-primary" id="loginSubmit">Log In</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEWS/MATERIAL DETAIL VIEW MODAL -->
+<div class="overlay" id="viewOverlay">
+  <div class="modal wide">
+    <div class="dot-menu admin-only" id="viewDotWrap" style="position:absolute;top:14px;right:52px;display:none;">
+      <button class="dot-menu-btn" onclick="toggleDotMenu('viewMenu', event)">⋮</button>
+      <div class="dot-menu-list" id="viewMenu">
+        <button onclick="editFromView()">Edit</button>
+        <button class="danger" onclick="deleteFromView()">Delete</button>
+      </div>
+    </div>
+    <button class="modal-close" data-close="viewOverlay">✕</button>
+    <h3 id="viewTitle"></h3>
+    <p class="sub" id="viewMeta"></p>
+    <div class="body" id="viewBody" style="font-size:0.95rem;line-height:1.6;"></div>
+    <p id="viewLinkWrap" style="margin-top:14px;"></p>
+  </div>
+</div>
+
+<!-- NEWS/MATERIAL EDIT MODAL -->
+<div class="overlay" id="itemOverlay">
+  <div class="modal">
+    <button class="modal-close" data-close="itemOverlay">✕</button>
+    <h3 id="itemModalTitle">Add News</h3>
+    <div id="itemFields"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" data-close="itemOverlay">Cancel</button>
+      <button class="btn btn-primary" id="itemSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- UNIT EDIT MODAL -->
+<div class="overlay" id="unitOverlay">
+  <div class="modal">
+    <button class="modal-close" data-close="unitOverlay">✕</button>
+    <h3>Edit Unit</h3>
+    <label class="field-label">Unit Title</label>
+    <input type="text" id="unitTitleInput">
+    <label class="field-label">Topics (one per line)</label>
+    <textarea id="unitTopicsInput" rows="8"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-outline" data-close="unitOverlay">Cancel</button>
+      <button class="btn btn-primary" id="unitSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ROSTER MODAL -->
+<div class="overlay" id="rosterOverlay">
+  <div class="modal">
+    <button class="modal-close" data-close="rosterOverlay">✕</button>
+    <h3>Manage Students</h3>
+    <p class="sub">Add or remove students from the class roster.</p>
+    <div style="display:flex;gap:8px;">
+      <input type="text" id="newStudentName" placeholder="Student name">
+      <button class="btn btn-primary btn-sm" id="addStudentBtn">Add</button>
+    </div>
+    <ul class="roster-manage-list" id="rosterManageList" style="margin-top:14px;"></ul>
+  </div>
+</div>
+
+<!-- NEW ATTENDANCE DATE MODAL -->
+<div class="overlay" id="newAttOverlay">
+  <div class="modal">
+    <button class="modal-close" data-close="newAttOverlay">✕</button>
+    <h3>Start Attendance</h3>
+    <p class="sub">Pick the date for this attendance record.</p>
+    <label class="field-label">Date</label>
+    <input type="date" id="newAttDate">
+    <div class="modal-actions">
+      <button class="btn btn-outline" data-close="newAttOverlay">Cancel</button>
+      <button class="btn btn-primary" id="newAttCreateBtn">Start</button>
+    </div>
+  </div>
+</div>
+
+<!-- ATTENDANCE CHECKLIST MODAL -->
+<div class="overlay" id="checklistOverlay">
+  <div class="modal wide">
+    <div class="dot-menu" id="checklistDotWrap" style="position:absolute;top:14px;right:52px;display:none;">
+      <button class="dot-menu-btn" onclick="toggleDotMenu('checklistMenu', event)">⋮</button>
+      <div class="dot-menu-list" id="checklistMenu">
+        <button class="danger" onclick="deleteAttendance(checklistDate, checklistDate)">Delete Record</button>
+      </div>
+    </div>
+    <button class="modal-close" data-close="checklistOverlay">✕</button>
+    <h3 id="checklistTitle">Attendance</h3>
+    <p class="sub" id="checklistSub"></p>
+    <ul class="checklist" id="checklistUl"></ul>
+    <div class="modal-actions" id="checklistActions">
+      <button class="btn btn-outline" data-close="checklistOverlay">Close</button>
+      <button class="btn btn-outline" id="undoTurnInBtn" style="display:none;">Undo Turn In</button>
+      <button class="btn btn-outline" id="saveDraftBtn">Save Draft</button>
+      <button class="btn btn-danger" id="finalizeBtn">Turn In…</button>
+    </div>
+  </div>
+</div>
+
+<!-- GENERIC CONFIRM MODAL (replaces browser alert/confirm popups) -->
+<div class="overlay" id="confirmOverlay">
+  <div class="modal">
+    <button class="modal-close" data-close="confirmOverlay">✕</button>
+    <h3 id="confirmTitle">Are you sure?</h3>
+    <p class="sub" id="confirmMessage"></p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" data-close="confirmOverlay">Cancel</button>
+      <button class="btn btn-danger" id="confirmActionBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESET DATA MODAL -->
+<div class="overlay" id="resetOverlay">
+  <div class="modal">
+    <button class="modal-close" data-close="resetOverlay">✕</button>
+    <h3>Reset Data</h3>
+    <p class="sub">These permanently delete News &amp; Materials content. Attendance records, course units, and the student roster are never touched here — manage attendance from the Attendance tab instead.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px;">
+      <button class="btn btn-outline" id="resetNewsBtn">Delete All News Posts</button>
+      <button class="btn btn-outline" id="resetMaterialsBtn">Delete All Materials</button>
+      <button class="btn btn-danger" id="resetEverythingBtn">Reset News &amp; Materials (Both)</button>
+    </div>
+  </div>
+</div>
+
+<!-- STUDENT HISTORY MODAL -->
+<div class="overlay" id="studentHistoryOverlay">
+  <div class="modal wide">
+    <button class="modal-close" data-close="studentHistoryOverlay">✕</button>
+    <h3 id="studentHistoryTitle">Student History</h3>
+    <div class="stat-row" id="studentHistoryStats"></div>
+    <ul class="checklist" id="studentHistoryList"></ul>
+  </div>
+</div>
+
+<!-- FINALIZE CONFIRM MODAL -->
+<div class="overlay" id="confirmFinalOverlay">
+  <div class="modal">
+    <h3>Turn in attendance?</h3>
+    <p class="sub">Once turned in, this record locks and can't be edited — but you can undo the turn-in later if you need to make a change. Double-check the checkmarks before confirming.</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" data-close="confirmFinalOverlay">Go Back</button>
+      <button class="btn btn-danger" id="confirmFinalBtn">Yes, Turn It In</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- Firebase setup ---------------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyDRfQDgkBcAdgogQEPxfDt8MUaY8IRp_b8",
+  authDomain: "astra-apcsa.firebaseapp.com",
+  projectId: "astra-apcsa",
+  storageBucket: "astra-apcsa.firebasestorage.app",
+  messagingSenderId: "261483926350",
+  appId: "1:261483926350:web:96f25cef881abbc67d441f"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+/* ---------------- Admin auth (client-side gate) ---------------- */
+const ADMIN_USER = "24bolorro";
+const ADMIN_PASS = "D7328905";
+let isAdmin = sessionStorage.getItem('astra_admin') === 'true';
+
+function setAdminUI(){
+  document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+  document.getElementById('adminArea').innerHTML = isAdmin
+    ? `<button class="btn btn-outline btn-sm" id="resetDataBtn">Reset Data</button><button class="btn btn-ghost" id="logoutBtn">Log Out (Admin)</button>`
+    : `<button class="btn btn-ghost" id="loginBtn">Admin Login</button>`;
+  if(isAdmin){
+    document.getElementById('logoutBtn').onclick = () => {
+      isAdmin = false;
+      sessionStorage.removeItem('astra_admin');
+      setAdminUI();
+      renderAll();
+    };
+    document.getElementById('resetDataBtn').onclick = () => openOverlay('resetOverlay');
+  } else {
+    document.getElementById('loginBtn').onclick = () => openOverlay('loginOverlay');
+  }
+}
+
+document.getElementById('loginSubmit').onclick = () => {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  if(u === ADMIN_USER && p === ADMIN_PASS){
+    isAdmin = true;
+    sessionStorage.setItem('astra_admin','true');
+    document.getElementById('loginError').style.display = 'none';
+    document.getElementById('loginUser').value = '';
+    document.getElementById('loginPass').value = '';
+    closeOverlay('loginOverlay');
+    setAdminUI();
+    renderAll();
+    showToast('Logged in as admin');
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+};
+
+/* ---------------- Overlay helpers ---------------- */
+function openOverlay(id){ document.getElementById(id).classList.add('show'); }
+function closeOverlay(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('[data-close]').forEach(btn=>{
+  btn.addEventListener('click', () => closeOverlay(btn.dataset.close));
+});
+document.querySelectorAll('.overlay').forEach(ov=>{
+  ov.addEventListener('click', e => { if(e.target === ov) closeOverlay(ov.id); });
+});
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* Professional confirm dialog — replaces window.confirm() everywhere */
+function askConfirm(title, message, onConfirm, confirmLabel='Confirm'){
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMessage').textContent = message;
+  const oldBtn = document.getElementById('confirmActionBtn');
+  oldBtn.textContent = confirmLabel;
+  const newBtn = oldBtn.cloneNode(true); // clear any previously-bound handler
+  oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+  newBtn.addEventListener('click', async () => {
+    closeOverlay('confirmOverlay');
+    await onConfirm();
+  });
+  openOverlay('confirmOverlay');
+}
+
+async function deleteAllDocs(colRef){
+  const snap = await colRef.get();
+  if(snap.empty) return;
+  const batch = db.batch();
+  snap.forEach(doc => batch.delete(doc.ref));
+  await batch.commit();
+}
+
+/* Three-dot dropdown menu, shared by news/materials cards and the attendance detail view */
+function toggleDotMenu(id, event){
+  event.stopPropagation();
+  document.querySelectorAll('.dot-menu-list.show').forEach(el => { if(el.id !== id) el.classList.remove('show'); });
+  document.getElementById(id).classList.toggle('show');
+}
+document.addEventListener('click', () => {
+  document.querySelectorAll('.dot-menu-list.show').forEach(el => el.classList.remove('show'));
+});
+
+/* ---------------- Nav ---------------- */
+document.querySelectorAll('nav .tab').forEach(btn=>{
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav .tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+btn.dataset.view).classList.add('active');
+  });
+});
+
+/* ---------------- Central Time helper ---------------- */
+async function getCentralTime(){
+  try{
+    const res = await fetch('https://timeapi.io/api/time/current/zone?timeZone=America/Chicago');
+    if(!res.ok) throw new Error('bad response');
+    const data = await res.json();
+    return {
+      date: `${data.year}-${String(data.month).padStart(2,'0')}-${String(data.day).padStart(2,'0')}`,
+      time: `${String(data.hour).padStart(2,'0')}:${String(data.minute).padStart(2,'0')}`,
+      display: new Date(data.dateTime).toLocaleString('en-US', {hour:'numeric',minute:'2-digit',hour12:true}) + ' CT'
+    };
+  }catch(e){
+    // fallback to local computed Central time
+    const now = new Date();
+    const ct = new Date(now.toLocaleString('en-US', {timeZone:'America/Chicago'}));
+    const pad = n => String(n).padStart(2,'0');
+    return {
+      date: `${ct.getFullYear()}-${pad(ct.getMonth()+1)}-${pad(ct.getDate())}`,
+      time: `${pad(ct.getHours())}:${pad(ct.getMinutes())}`,
+      display: ct.toLocaleString('en-US', {hour:'numeric',minute:'2-digit',hour12:true}) + ' CT (est.)'
+    };
+  }
+}
+
+/* ---------------- NEWS ---------------- */
+const newsCol = db.collection('news');
+document.getElementById('addNewsBtn').onclick = () => openItemModal('news');
+newsCol.orderBy('createdAt','desc').onSnapshot(snap=>{
+  const list = document.getElementById('newsList');
+  if(snap.empty){ list.innerHTML = '<div class="empty">No news posted yet.</div>'; return; }
+  list.innerHTML = '';
+  snap.forEach(doc=>{
+    const d = doc.data();
+    const dateStr = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleDateString() : '';
+    list.innerHTML += `
+      <div class="card">
+        <div class="card-title-row">
+          <div>
+            <h3>${escapeHtml(d.title||'')}</h3>
+            <div class="meta">${dateStr}</div>
+          </div>
+          <div class="dot-menu admin-only" style="display:${isAdmin?'inline-block':'none'};">
+            <button class="dot-menu-btn" onclick="toggleDotMenu('newsMenu_${doc.id}', event)">⋮</button>
+            <div class="dot-menu-list" id="newsMenu_${doc.id}">
+              <button onclick="editNews('${doc.id}')">Edit</button>
+              <button class="danger" onclick="deleteItem('news','${doc.id}')">Delete</button>
+            </div>
+          </div>
+        </div>
+        <div class="body">${escapeHtml(d.body||'')}</div>
+      </div>`;
+  });
+});
+
+/* ---------------- MATERIALS ---------------- */
+const materialsCol = db.collection('materials');
+document.getElementById('addMaterialBtn').onclick = () => openItemModal('materials');
+materialsCol.orderBy('createdAt','desc').onSnapshot(snap=>{
+  const list = document.getElementById('materialsList');
+  if(snap.empty){ list.innerHTML = '<div class="empty">No materials added yet.</div>'; return; }
+  list.innerHTML = '';
+  snap.forEach(doc=>{
+    const d = doc.data();
+    list.innerHTML += `
+      <div class="card">
+        <div class="card-title-row">
+          <div>
+            <h3>${escapeHtml(d.title||'')}</h3>
+            ${d.link ? `<div class="meta"><a href="${escapeAttr(d.link)}" target="_blank" rel="noopener">${escapeHtml(d.link)}</a></div>` : ''}
+          </div>
+          <div class="dot-menu admin-only" style="display:${isAdmin?'inline-block':'none'};">
+            <button class="dot-menu-btn" onclick="toggleDotMenu('materialMenu_${doc.id}', event)">⋮</button>
+            <div class="dot-menu-list" id="materialMenu_${doc.id}">
+              <button onclick="editMaterial('${doc.id}')">Edit</button>
+              <button class="danger" onclick="deleteItem('materials','${doc.id}')">Delete</button>
+            </div>
+          </div>
+        </div>
+        <div class="body">${escapeHtml(d.description||'')}</div>
+      </div>`;
+  });
+});
+
+/* item modal (shared by news + materials) */
+let itemModalMode = null; // 'news' | 'materials'
+let itemModalEditId = null;
+
+function openItemModal(type, editData=null, editId=null){
+  itemModalMode = type;
+  itemModalEditId = editId;
+  document.getElementById('itemModalTitle').textContent =
+    (editId ? 'Edit ' : 'Add ') + (type==='news' ? 'News' : 'Material');
+  const fields = document.getElementById('itemFields');
+  if(type === 'news'){
+    fields.innerHTML = `
+      <label class="field-label">Title</label>
+      <input type="text" id="f_title" value="${editData ? escapeAttr(editData.title) : ''}">
+      <label class="field-label">Body</label>
+      <textarea id="f_body" rows="5">${editData ? escapeHtml(editData.body) : ''}</textarea>`;
+  } else {
+    fields.innerHTML = `
+      <label class="field-label">Title</label>
+      <input type="text" id="f_title" value="${editData ? escapeAttr(editData.title) : ''}">
+      <label class="field-label">Description</label>
+      <textarea id="f_body" rows="4">${editData ? escapeHtml(editData.description) : ''}</textarea>
+      <label class="field-label">Link (optional)</label>
+      <input type="url" id="f_link" placeholder="https://..." value="${editData ? escapeAttr(editData.link||'') : ''}">`;
+  }
+  openOverlay('itemOverlay');
+}
+
+document.getElementById('itemSaveBtn').onclick = async () => {
+  if(!isAdmin) return;
+  const title = document.getElementById('f_title').value.trim();
+  const body = document.getElementById('f_body').value.trim();
+  if(!title){ showToast('Please add a title'); return; }
+  const col = itemModalMode === 'news' ? newsCol : materialsCol;
+  const payload = itemModalMode === 'news'
+    ? { title, body }
+    : { title, description: body, link: document.getElementById('f_link').value.trim() };
+  try{
+    if(itemModalEditId){
+      await col.doc(itemModalEditId).update(payload);
+      showToast('Updated');
+    } else {
+      payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      await col.add(payload);
+      showToast('Added');
+    }
+    closeOverlay('itemOverlay');
+  }catch(e){ showToast('Error: '+e.message); }
+};
+
+window.editNews = async (id) => {
+  const doc = await newsCol.doc(id).get();
+  openItemModal('news', doc.data(), id);
+};
+window.editMaterial = async (id) => {
+  const doc = await materialsCol.doc(id).get();
+  openItemModal('materials', doc.data(), id);
+};
+window.deleteItem = (colName, id) => {
+  askConfirm('Delete this item?', 'This permanently removes it from the site. This cannot be undone.', async () => {
+    await db.collection(colName).doc(id).delete();
+    showToast('Deleted');
+  }, 'Delete');
+};
+
+/* ---------------- COURSE UNITS ---------------- */
+const unitsCol = db.collection('units');
+const DEFAULT_UNITS = [
+  { order:1, title:'Unit 1: Primitive Types & Objects', topics:['Variables and data types','Expressions and assignment','Compound assignment operators','Casting and ranges of variables','Object creation and instance methods'] },
+  { order:2, title:'Unit 2: Using Objects', topics:['Objects: instances of classes','Class libraries and the Math class','String class and String methods','Wrapper classes: Integer and Double'] },
+  { order:3, title:'Unit 3: Boolean Expressions & if Statements', topics:['Boolean expressions','if, if-else, nested if statements','Compound boolean expressions','Truth tables and De Morgan\'s Laws'] },
+  { order:4, title:'Unit 4: Iteration', topics:['while loops','for loops','Nested iteration','Informal code analysis'] }
+];
+
+async function ensureDefaultUnits(){
+  const snap = await unitsCol.get();
+  if(snap.empty){
+    for(const u of DEFAULT_UNITS){ await unitsCol.add(u); }
+  }
+}
+ensureDefaultUnits();
+
+let unitEditId = null;
+unitsCol.orderBy('order').onSnapshot(snap=>{
+  const grid = document.getElementById('unitsGrid');
+  if(snap.empty){ grid.innerHTML = '<div class="empty">No units yet.</div>'; return; }
+  grid.innerHTML = '';
+  snap.forEach(doc=>{
+    const d = doc.data();
+    const topics = (d.topics||[]).map(t=>`<li>${escapeHtml(t)}</li>`).join('');
+    grid.innerHTML += `
+      <div class="unit-card">
+        <div class="unit-head">
+          <div class="u-num">Unit ${d.order||''}</div>
+          <div class="u-title">${escapeHtml((d.title||'').replace(/^Unit\s*\d+:\s*/,''))}</div>
+        </div>
+        <div class="unit-body"><ul>${topics || '<li style="color:#9aa5c0;">No topics added</li>'}</ul></div>
+        <div class="unit-foot admin-only" style="display:${isAdmin?'flex':'none'};">
+          <button class="btn btn-outline btn-sm" onclick="openUnitEdit('${doc.id}')">Edit</button>
+        </div>
+      </div>`;
+  });
+});
+
+window.openUnitEdit = async (id) => {
+  const doc = await unitsCol.doc(id).get();
+  const d = doc.data();
+  unitEditId = id;
+  document.getElementById('unitTitleInput').value = d.title || '';
+  document.getElementById('unitTopicsInput').value = (d.topics||[]).join('\n');
+  openOverlay('unitOverlay');
+};
+document.getElementById('unitSaveBtn').onclick = async () => {
+  if(!unitEditId) return;
+  const title = document.getElementById('unitTitleInput').value.trim();
+  const topics = document.getElementById('unitTopicsInput').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  await unitsCol.doc(unitEditId).update({ title, topics });
+  closeOverlay('unitOverlay');
+  showToast('Unit updated');
+};
+
+/* ---------------- STUDENTS / ROSTER ---------------- */
+const studentsCol = db.collection('students');
+let studentsCache = [];
+studentsCol.orderBy('name').onSnapshot(snap=>{
+  studentsCache = [];
+  snap.forEach(doc=>studentsCache.push({id:doc.id, ...doc.data()}));
+  renderRosterManageList();
+  const dl = document.getElementById('studentSearchList');
+  if(dl) dl.innerHTML = studentsCache.map(s=>`<option value="${escapeAttr(s.name)}">`).join('');
+  renderAttendanceStats();
+});
+
+function renderRosterManageList(){
+  const ul = document.getElementById('rosterManageList');
+  if(studentsCache.length===0){ ul.innerHTML = '<li style="color:#9aa5c0;">No students yet.</li>'; return; }
+  ul.innerHTML = studentsCache.map(s=>`
+    <li><span>${escapeHtml(s.name)}</span>
+      <button class="btn btn-danger btn-sm" onclick="removeStudent('${s.id}')">Remove</button>
+    </li>`).join('');
+}
+window.removeStudent = (id) => {
+  askConfirm('Remove this student?', 'They\'ll be removed from the roster and future attendance sessions. Past records keep their name for history.', async () => {
+    await studentsCol.doc(id).delete();
+  }, 'Remove');
+};
+document.getElementById('manageRosterBtn').onclick = () => openOverlay('rosterOverlay');
+document.getElementById('addStudentBtn').onclick = async () => {
+  const input = document.getElementById('newStudentName');
+  const name = input.value.trim();
+  if(!name) return;
+  await studentsCol.add({ name });
+  input.value = '';
+};
+
+/* ---------------- ATTENDANCE ---------------- */
+const attendanceCol = db.collection('attendance');
+document.getElementById('newAttendanceBtn').onclick = async () => {
+  const ct = await getCentralTime();
+  document.getElementById('newAttDate').value = ct.date;
+  openOverlay('newAttOverlay');
+};
+
+document.getElementById('newAttCreateBtn').onclick = async () => {
+  const date = document.getElementById('newAttDate').value;
+  if(!date){ showToast('Pick a date'); return; }
+  const existing = await attendanceCol.doc(date).get();
+  closeOverlay('newAttOverlay');
+  if(existing.exists){
+    openChecklist(date, existing.data());
+    return;
+  }
+  const ct = await getCentralTime();
+  const records = {};
+  studentsCache.forEach(s => records[s.id] = false);
+  const payload = { date, timeCT: ct.time, timeDisplay: ct.display, finalized:false, records };
+  await attendanceCol.doc(date).set(payload);
+  openChecklist(date, payload);
+};
+
+let attendanceCache = [];
+attendanceCol.orderBy('date','desc').onSnapshot(snap=>{
+  attendanceCache = [];
+  const body = document.getElementById('attendanceBody');
+  if(snap.empty){
+    body.innerHTML = '<tr><td colspan="5" class="empty">No attendance records yet.</td></tr>';
+    renderAttendanceStats();
+    return;
+  }
+  body.innerHTML = '';
+  snap.forEach(doc=>{
+    const d = { id: doc.id, ...doc.data() };
+    attendanceCache.push(d);
+    const presentCount = Object.values(d.records||{}).filter(Boolean).length;
+    const total = Object.keys(d.records||{}).length;
+    body.innerHTML += `
+      <tr class="att-row" onclick='openChecklistFromRow("${doc.id}")'>
+        <td>${d.date}</td>
+        <td>${d.timeDisplay || d.timeCT || ''}</td>
+        <td>${presentCount} / ${total}</td>
+        <td><span class="pill ${d.finalized?'final':'draft'}">${d.finalized?'Turned In':'Draft'}</span></td>
+        <td style="color:var(--blue-500);font-size:0.8rem;font-weight:600;">View →</td>
+      </tr>`;
+  });
+  renderAttendanceStats();
+});
+
+function renderAttendanceStats(){
+  const el = document.getElementById('attendanceStats');
+  if(!el) return;
+  const totalStudents = studentsCache.length;
+  const totalSessions = attendanceCache.length;
+  const turnedIn = attendanceCache.filter(a=>a.finalized).length;
+  el.innerHTML = `
+    <div class="stat"><div class="num">${totalStudents}</div><div class="label">Students</div></div>
+    <div class="stat"><div class="num">${totalSessions}</div><div class="label">Sessions Logged</div></div>
+    <div class="stat"><div class="num">${turnedIn}</div><div class="label">Turned In</div></div>`;
+}
+
+/* ---------------- STUDENT SEARCH / HISTORY ---------------- */
+document.getElementById('studentSearchBtn').onclick = () => {
+  const name = document.getElementById('studentSearchInput').value.trim();
+  if(!name){ showToast('Type a student name first'); return; }
+  const student = studentsCache.find(s => s.name.toLowerCase() === name.toLowerCase());
+  if(!student){ showToast('No student found with that exact name'); return; }
+  showStudentHistory(student);
+};
+
+function showStudentHistory(student){
+  document.getElementById('studentHistoryTitle').textContent = `Attendance — ${student.name}`;
+  const relevant = attendanceCache.filter(a => Object.prototype.hasOwnProperty.call(a.records||{}, student.id));
+  const present = relevant.filter(a => a.records[student.id]).length;
+  const total = relevant.length;
+  const pct = total ? Math.round((present/total)*100) : 0;
+  document.getElementById('studentHistoryStats').innerHTML = `
+    <div class="stat"><div class="num">${present}/${total}</div><div class="label">Sessions Present</div></div>
+    <div class="stat"><div class="num">${pct}%</div><div class="label">Attendance Rate</div></div>`;
+  const list = document.getElementById('studentHistoryList');
+  if(relevant.length === 0){
+    list.innerHTML = '<li>No attendance recorded for this student yet.</li>';
+  } else {
+    list.innerHTML = relevant
+      .slice()
+      .sort((a,b) => b.date.localeCompare(a.date))
+      .map(a => {
+        const wasPresent = !!a.records[student.id];
+        return `<li>
+          <span class="name">${a.date}</span>
+          <span class="pill" style="${wasPresent ? 'background:#e6f7ec;color:#1f9d55;' : 'background:#fdeceb;color:#c0392b;'}">${wasPresent ? 'Present' : 'Absent'}</span>
+          ${!a.finalized ? '<span style="font-size:0.72rem;color:var(--muted);margin-left:8px;">(draft)</span>' : ''}
+        </li>`;
+      }).join('');
+  }
+  openOverlay('studentHistoryOverlay');
+}
+
+window.openChecklistFromRow = async (id) => {
+  const doc = await attendanceCol.doc(id).get();
+  openChecklist(id, doc.data());
+};
+
+window.deleteAttendance = (id, date) => {
+  askConfirm('Delete this attendance record?', `This permanently deletes the ${date} attendance record. This cannot be undone.`, async () => {
+    await attendanceCol.doc(id).delete();
+    closeOverlay('checklistOverlay');
+    showToast('Attendance record deleted');
+  }, 'Delete');
+};
+
+let checklistDate = null;
+let checklistRecords = {};
+function openChecklist(date, data){
+  checklistDate = date;
+  checklistRecords = { ...(data.records||{}) };
+  document.getElementById('checklistTitle').textContent = `Attendance — ${date}`;
+  document.getElementById('checklistSub').textContent =
+    (data.finalized ? 'Turned In (locked — undo turn-in to edit or delete)' : 'Draft — not turned in yet') + ` · ${data.timeDisplay || data.timeCT || ''}`;
+  const ul = document.getElementById('checklistUl');
+  if(studentsCache.length === 0){
+    ul.innerHTML = '<li>No students on the roster yet. Add students first.</li>';
+  } else {
+    ul.innerHTML = studentsCache.map(s => `
+      <li>
+        <input type="checkbox" id="chk_${s.id}" ${checklistRecords[s.id] ? 'checked' : ''}
+          ${data.finalized && !isAdmin ? 'disabled' : ''} ${data.finalized ? 'disabled' : ''}
+          onchange="checklistRecords['${s.id}']=this.checked">
+        <label for="chk_${s.id}" class="name">${escapeHtml(s.name)}</label>
+      </li>`).join('');
+  }
+  const canEdit = isAdmin && !data.finalized;
+  document.getElementById('saveDraftBtn').style.display = canEdit ? '' : 'none';
+  document.getElementById('finalizeBtn').style.display = canEdit ? '' : 'none';
+  document.getElementById('undoTurnInBtn').style.display = (isAdmin && data.finalized) ? '' : 'none';
+  document.getElementById('checklistDotWrap').style.display = (isAdmin && !data.finalized) ? 'inline-block' : 'none';
+  openOverlay('checklistOverlay');
+}
+
+document.getElementById('saveDraftBtn').onclick = async () => {
+  await attendanceCol.doc(checklistDate).update({ records: checklistRecords });
+  showToast('Draft saved');
+  closeOverlay('checklistOverlay');
+};
+document.getElementById('finalizeBtn').onclick = () => openOverlay('confirmFinalOverlay');
+document.getElementById('confirmFinalBtn').onclick = async () => {
+  const ct = await getCentralTime();
+  await attendanceCol.doc(checklistDate).update({
+    records: checklistRecords, finalized:true, finalizedAtDisplay: ct.display
+  });
+  closeOverlay('confirmFinalOverlay');
+  closeOverlay('checklistOverlay');
+  showToast('Attendance turned in');
+};
+document.getElementById('undoTurnInBtn').onclick = () => {
+  askConfirm('Undo turn-in?', 'This reopens the record for editing. You can turn it back in when you\'re done.', async () => {
+    await attendanceCol.doc(checklistDate).update({ finalized:false });
+    const doc = await attendanceCol.doc(checklistDate).get();
+    openChecklist(checklistDate, { id: checklistDate, ...doc.data() });
+    showToast('Turn-in undone — editing re-enabled');
+  }, 'Undo Turn-In');
+};
+
+/* ---------------- RESET DATA (admin) — News & Materials only, attendance is never touched here ---------------- */
+document.getElementById('resetNewsBtn').onclick = () => {
+  closeOverlay('resetOverlay');
+  askConfirm('Delete all news posts?', 'This permanently deletes every news post. This cannot be undone.', async () => {
+    await deleteAllDocs(newsCol);
+    showToast('All news posts deleted');
+  }, 'Delete All');
+};
+document.getElementById('resetMaterialsBtn').onclick = () => {
+  closeOverlay('resetOverlay');
+  askConfirm('Delete all materials?', 'This permanently deletes every material post. This cannot be undone.', async () => {
+    await deleteAllDocs(materialsCol);
+    showToast('All materials deleted');
+  }, 'Delete All');
+};
+document.getElementById('resetEverythingBtn').onclick = () => {
+  closeOverlay('resetOverlay');
+  askConfirm('Reset News & Materials?', 'This permanently deletes every news post and every material. Attendance, course units, and the student roster stay intact. This cannot be undone.', async () => {
+    await Promise.all([deleteAllDocs(newsCol), deleteAllDocs(materialsCol)]);
+    showToast('News & Materials have been reset');
+  }, 'Reset Everything');
+};
+
+/* ---------------- utils ---------------- */
+function escapeHtml(str){
+  return (str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+function escapeAttr(str){ return escapeHtml(str); }
+function renderAll(){ /* snapshots auto-refresh; this just toggles admin-only visibility */
+  document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+}
+
+setAdminUI();
+</script>
+</body>
+</html>

@@ -140,12 +140,16 @@
   .pill{display:inline-block;font-size:0.74rem;font-weight:700;padding:3px 10px;border-radius:999px;}
   .pill.final{background:#e6f7ec;color:var(--good);}
   .pill.draft{background:#fff4e0;color:#b5760c;}
+  .pill.owe{background:#fdeceb;color:var(--danger);}
+  .pill.ahead{background:#e8effc;color:var(--blue-600);}
+  .pill.renew{background:#fff4e0;color:#b5760c;}
+  .pill.none{background:#eef1fb;color:var(--muted);}
 
-  input[type=text], input[type=password], input[type=url], input[type=date], textarea{
+  input[type=text], input[type=password], input[type=url], input[type=date], textarea, select{
     width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid #d8e0f5;
     font-family:inherit;font-size:0.92rem;background:#fbfcff;color:var(--text);
   }
-  input:focus, textarea:focus{outline:none;border-color:var(--blue-500);background:#fff;}
+  input:focus, textarea:focus, select:focus{outline:none;border-color:var(--blue-500);background:#fff;}
   label.field-label{display:block;font-size:0.8rem;font-weight:600;color:var(--muted);margin:12px 0 5px;}
   label.field-label:first-child{margin-top:0;}
 
@@ -251,6 +255,7 @@
       <button class="tab active" data-view="home">Home</button>
       <button class="tab" data-view="course">Course</button>
       <button class="tab" data-view="attendance">Attendance</button>
+      <button class="tab admin-only" data-view="payments" style="display:none;">Payments</button>
     </nav>
     <div class="admin-area" id="adminArea">
       <button class="btn btn-ghost" id="loginBtn">Admin Login</button>
@@ -312,16 +317,37 @@
     <div class="stat-row" id="attendanceStats"></div>
 
     <div class="card" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <label style="font-weight:600;font-size:0.85rem;color:var(--muted);white-space:nowrap;">🔍 Look up a student</label>
-      <input type="text" id="studentSearchInput" list="studentSearchList" placeholder="Type a student's name…" style="max-width:260px;">
-      <datalist id="studentSearchList"></datalist>
-      <button class="btn btn-outline btn-sm" id="studentSearchBtn">View History</button>
+      <label for="studentSelect" style="font-weight:600;font-size:0.85rem;color:var(--muted);white-space:nowrap;">🔍 Check a student</label>
+      <select id="studentSelect" style="max-width:260px;">
+        <option value="">Select a student…</option>
+      </select>
     </div>
 
     <div class="card" style="padding:0;overflow:hidden;">
       <table class="roster">
         <thead><tr><th>Date</th><th>Time (CT)</th><th>Present</th><th>Status</th><th></th></tr></thead>
         <tbody id="attendanceBody"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PAYMENTS (admin only) -->
+  <div class="view" id="view-payments">
+    <div class="page-title">
+      <div>
+        <h1>Payments</h1>
+        <p id="paySubtitle">Admin only.</p>
+      </div>
+      <div>
+        <button class="btn btn-outline btn-sm" id="paySettingsBtn">Settings</button>
+        <button class="btn btn-primary btn-sm" id="addPaymentBtn">+ Add Payment</button>
+      </div>
+    </div>
+    <div class="stat-row" id="payStats"></div>
+    <div class="card" style="padding:0;overflow:auto;">
+      <table class="roster">
+        <thead><tr><th>Student</th><th>Paid</th><th>Attended</th><th>Classes Left</th><th>Status</th><th></th></tr></thead>
+        <tbody id="payBody"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -446,6 +472,52 @@
   </div>
 </div>
 
+<!-- ADD PAYMENT MODAL -->
+<div class="overlay" id="payOverlay">
+  <div class="modal">
+    <button class="modal-close" data-close="payOverlay">✕</button>
+    <h3>Add Payment</h3>
+    <label class="field-label">Student</label>
+    <select id="payStudent"></select>
+    <label class="field-label">Amount ($)</label>
+    <input type="number" id="payAmount" min="0" step="1" style="width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid #d8e0f5;font-family:inherit;font-size:0.92rem;">
+    <label class="field-label">Date</label>
+    <input type="date" id="payDate">
+    <label class="field-label">Note (optional)</label>
+    <input type="text" id="payNote" placeholder="e.g. cash, Venmo">
+    <div class="modal-actions">
+      <button class="btn btn-outline" data-close="payOverlay">Cancel</button>
+      <button class="btn btn-primary" id="paySaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT HISTORY MODAL -->
+<div class="overlay" id="payHistoryOverlay">
+  <div class="modal wide">
+    <button class="modal-close" data-close="payHistoryOverlay">✕</button>
+    <h3 id="payHistoryTitle">Payments</h3>
+    <ul class="checklist" id="payHistoryList"></ul>
+  </div>
+</div>
+
+<!-- PAYMENT SETTINGS MODAL -->
+<div class="overlay" id="paySettingsOverlay">
+  <div class="modal">
+    <button class="modal-close" data-close="paySettingsOverlay">✕</button>
+    <h3>Payment Settings</h3>
+    <p class="sub">One payment covers one 4-week block. Set how many classes that block includes so "classes left" is accurate.</p>
+    <label class="field-label">Price per 4 weeks ($)</label>
+    <input type="number" id="setPrice" min="1" step="1" style="width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid #d8e0f5;font-family:inherit;font-size:0.92rem;">
+    <label class="field-label">Classes per 4-week block</label>
+    <input type="number" id="setClasses" min="1" step="1" style="width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid #d8e0f5;font-family:inherit;font-size:0.92rem;">
+    <div class="modal-actions">
+      <button class="btn btn-outline" data-close="paySettingsOverlay">Cancel</button>
+      <button class="btn btn-primary" id="setSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- GENERIC CONFIRM MODAL (replaces browser alert/confirm popups) -->
 <div class="overlay" id="confirmOverlay">
   <div class="modal">
@@ -524,8 +596,10 @@ function setAdminUI(){
     document.getElementById('logoutBtn').onclick = () => {
       isAdmin = false;
       sessionStorage.removeItem('astra_admin');
+      stopPaymentListeners();
       setAdminUI();
       renderAll();
+      document.querySelector('nav .tab[data-view="home"]').click();
     };
     document.getElementById('resetDataBtn').onclick = () => openOverlay('resetOverlay');
   } else {
@@ -545,6 +619,7 @@ document.getElementById('loginSubmit').onclick = () => {
     closeOverlay('loginOverlay');
     setAdminUI();
     renderAll();
+    startPaymentListeners();
     showToast('Logged in as admin');
   } else {
     document.getElementById('loginError').style.display = 'block';
@@ -817,15 +892,49 @@ document.getElementById('unitSaveBtn').onclick = async () => {
 
 /* ---------------- STUDENTS / ROSTER ---------------- */
 const studentsCol = db.collection('students');
+const DEFAULT_STUDENTS = ['Tod', 'Andy', 'Tselmuun', 'Itgelt'];
 let studentsCache = [];
+let rosterSeeded = false;
+
+/* Make sure all 4 class members exist on the roster (adds only the missing ones, never deletes). */
+async function ensureDefaultStudents(existing){
+  const have = new Set(existing.map(s => (s.name||'').trim().toLowerCase()));
+  for(const name of DEFAULT_STUDENTS){
+    if(!have.has(name.toLowerCase())){
+      await studentsCol.add({ name });
+    }
+  }
+}
+
 studentsCol.orderBy('name').onSnapshot(snap=>{
   studentsCache = [];
   snap.forEach(doc=>studentsCache.push({id:doc.id, ...doc.data()}));
+  if(!rosterSeeded){
+    rosterSeeded = true;
+    ensureDefaultStudents(studentsCache); // snapshot fires again once students are added
+  }
   renderRosterManageList();
-  const dl = document.getElementById('studentSearchList');
-  if(dl) dl.innerHTML = studentsCache.map(s=>`<option value="${escapeAttr(s.name)}">`).join('');
+  renderStudentSelect();
+  renderAttendanceTable();
   renderAttendanceStats();
 });
+
+function renderStudentSelect(){
+  const sel = document.getElementById('studentSelect');
+  if(!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Select a student…</option>' +
+    studentsCache.map(s=>`<option value="${escapeAttr(s.id)}">${escapeHtml(s.name)}</option>`).join('');
+  if(studentsCache.some(s => s.id === current)) sel.value = current;
+}
+
+document.getElementById('studentSelect').onchange = (e) => {
+  const id = e.target.value;
+  if(!id) return;
+  const student = studentsCache.find(s => s.id === id);
+  if(student) showStudentHistory(student);
+  e.target.value = ''; // reset so the same student can be picked again
+};
 
 function renderRosterManageList(){
   const ul = document.getElementById('rosterManageList');
@@ -874,32 +983,42 @@ document.getElementById('newAttCreateBtn').onclick = async () => {
   openChecklist(date, payload);
 };
 
+/* Counts are always based on the CURRENT roster (4 students), so older records
+   made before a student was added show as e.g. 3/4 instead of 3/3.
+   Students missing from an old record count as not present. */
+function countPresent(record){
+  const recs = record.records || {};
+  const present = studentsCache.filter(s => recs[s.id]).length;
+  return { present, total: studentsCache.length };
+}
+
 let attendanceCache = [];
 attendanceCol.orderBy('date','desc').onSnapshot(snap=>{
   attendanceCache = [];
+  snap.forEach(doc=> attendanceCache.push({ id: doc.id, ...doc.data() }));
+  renderAttendanceTable();
+  renderAttendanceStats();
+});
+
+function renderAttendanceTable(){
   const body = document.getElementById('attendanceBody');
-  if(snap.empty){
+  if(!body) return;
+  if(attendanceCache.length === 0){
     body.innerHTML = '<tr><td colspan="5" class="empty">No attendance records yet.</td></tr>';
-    renderAttendanceStats();
     return;
   }
-  body.innerHTML = '';
-  snap.forEach(doc=>{
-    const d = { id: doc.id, ...doc.data() };
-    attendanceCache.push(d);
-    const presentCount = Object.values(d.records||{}).filter(Boolean).length;
-    const total = Object.keys(d.records||{}).length;
-    body.innerHTML += `
-      <tr class="att-row" onclick='openChecklistFromRow("${doc.id}")'>
+  body.innerHTML = attendanceCache.map(d=>{
+    const { present, total } = countPresent(d);
+    return `
+      <tr class="att-row" onclick='openChecklistFromRow("${d.id}")'>
         <td>${d.date}</td>
         <td>${d.timeDisplay || d.timeCT || ''}</td>
-        <td>${presentCount} / ${total}</td>
+        <td>${present} / ${total}</td>
         <td><span class="pill ${d.finalized?'final':'draft'}">${d.finalized?'Turned In':'Draft'}</span></td>
         <td style="color:var(--blue-500);font-size:0.8rem;font-weight:600;">View →</td>
       </tr>`;
-  });
-  renderAttendanceStats();
-});
+  }).join('');
+}
 
 function renderAttendanceStats(){
   const el = document.getElementById('attendanceStats');
@@ -913,39 +1032,29 @@ function renderAttendanceStats(){
     <div class="stat"><div class="num">${turnedIn}</div><div class="label">Turned In</div></div>`;
 }
 
-/* ---------------- STUDENT SEARCH / HISTORY ---------------- */
-document.getElementById('studentSearchBtn').onclick = () => {
-  const name = document.getElementById('studentSearchInput').value.trim();
-  if(!name){ showToast('Type a student name first'); return; }
-  const student = studentsCache.find(s => s.name.toLowerCase() === name.toLowerCase());
-  if(!student){ showToast('No student found with that exact name'); return; }
-  showStudentHistory(student);
-};
-
+/* ---------------- STUDENT HISTORY ---------------- */
 function showStudentHistory(student){
   document.getElementById('studentHistoryTitle').textContent = `Attendance — ${student.name}`;
-  const relevant = attendanceCache.filter(a => Object.prototype.hasOwnProperty.call(a.records||{}, student.id));
-  const present = relevant.filter(a => a.records[student.id]).length;
-  const total = relevant.length;
+  // every session counts for every current student; a missing entry in an older record = absent
+  const sessions = attendanceCache.slice().sort((a,b) => b.date.localeCompare(a.date));
+  const present = sessions.filter(a => (a.records||{})[student.id]).length;
+  const total = sessions.length;
   const pct = total ? Math.round((present/total)*100) : 0;
   document.getElementById('studentHistoryStats').innerHTML = `
     <div class="stat"><div class="num">${present}/${total}</div><div class="label">Sessions Present</div></div>
     <div class="stat"><div class="num">${pct}%</div><div class="label">Attendance Rate</div></div>`;
   const list = document.getElementById('studentHistoryList');
-  if(relevant.length === 0){
-    list.innerHTML = '<li>No attendance recorded for this student yet.</li>';
+  if(sessions.length === 0){
+    list.innerHTML = '<li>No attendance recorded yet.</li>';
   } else {
-    list.innerHTML = relevant
-      .slice()
-      .sort((a,b) => b.date.localeCompare(a.date))
-      .map(a => {
-        const wasPresent = !!a.records[student.id];
-        return `<li>
-          <span class="name">${a.date}</span>
-          <span class="pill" style="${wasPresent ? 'background:#e6f7ec;color:#1f9d55;' : 'background:#fdeceb;color:#c0392b;'}">${wasPresent ? 'Present' : 'Absent'}</span>
-          ${!a.finalized ? '<span style="font-size:0.72rem;color:var(--muted);margin-left:8px;">(draft)</span>' : ''}
-        </li>`;
-      }).join('');
+    list.innerHTML = sessions.map(a => {
+      const wasPresent = !!(a.records||{})[student.id];
+      return `<li>
+        <span class="name">${a.date}</span>
+        <span class="pill" style="${wasPresent ? 'background:#e6f7ec;color:#1f9d55;' : 'background:#fdeceb;color:#c0392b;'}">${wasPresent ? 'Present' : 'Absent'}</span>
+        ${!a.finalized ? '<span style="font-size:0.72rem;color:var(--muted);margin-left:8px;">(draft)</span>' : ''}
+      </li>`;
+    }).join('');
   }
   openOverlay('studentHistoryOverlay');
 }
@@ -1015,6 +1124,156 @@ document.getElementById('undoTurnInBtn').onclick = () => {
   }, 'Undo Turn-In');
 };
 
+/* ---------------- PAYMENTS (admin only) ---------------- */
+const paymentsCol = db.collection('payments');
+const paySettingsDoc = db.collection('settings').doc('payments');
+let paymentsCache = [];
+let paySettings = { price: 120, classesPerBlock: 8 };
+let unsubPayments = null, unsubPaySettings = null;
+
+function startPaymentListeners(){
+  if(unsubPayments) return;
+  unsubPayments = paymentsCol.onSnapshot(snap=>{
+    paymentsCache = [];
+    snap.forEach(d => paymentsCache.push({ id:d.id, ...d.data() }));
+    renderPayments();
+  }, err => showToast('Payments error: ' + err.message));
+  unsubPaySettings = paySettingsDoc.onSnapshot(doc=>{
+    if(doc.exists) paySettings = { ...paySettings, ...doc.data() };
+    renderPayments();
+  });
+}
+function stopPaymentListeners(){
+  if(unsubPayments){ unsubPayments(); unsubPayments = null; }
+  if(unsubPaySettings){ unsubPaySettings(); unsubPaySettings = null; }
+  paymentsCache = [];
+}
+
+function paymentSummary(student){
+  const price = Number(paySettings.price) || 120;
+  const per = Number(paySettings.classesPerBlock) || 8;
+  const paid = paymentsCache.filter(p => p.studentId === student.id)
+    .reduce((sum,p) => sum + (Number(p.amount)||0), 0);
+  const attended = attendanceCache.filter(a => (a.records||{})[student.id]).length;
+  const classesPaid = Math.floor((paid / price) * per);
+  const classesLeft = classesPaid - attended;
+  const needed = Math.max(1, Math.ceil(attended / per)) * price; // blocks that should be paid by now
+  const owed = Math.max(0, needed - paid);
+  const extra = Math.max(0, paid - needed);
+  let status, cls;
+  if(paid === 0 && attended === 0){ status = 'No payments'; cls = 'none'; }
+  else if(owed > 0){ status = `Owes $${owed}`; cls = 'owe'; }
+  else if(extra > 0){ status = `Ahead +$${extra}`; cls = 'ahead'; }
+  else if(classesLeft === 0){ status = 'Renew due'; cls = 'renew'; }
+  else { status = 'Paid up'; cls = 'final'; }
+  return { paid, attended, classesLeft, owed, extra, status, cls };
+}
+
+function renderPayments(){
+  const body = document.getElementById('payBody');
+  if(!body) return;
+  const price = Number(paySettings.price) || 120;
+  const per = Number(paySettings.classesPerBlock) || 8;
+  document.getElementById('paySubtitle').textContent =
+    `Admin only · $${price} per 4 weeks (${per} classes per block)`;
+  if(studentsCache.length === 0){
+    body.innerHTML = '<tr><td colspan="6" class="empty">No students on the roster.</td></tr>';
+    return;
+  }
+  let collected = 0, owingCount = 0, owingTotal = 0;
+  body.innerHTML = studentsCache.map(s => {
+    const m = paymentSummary(s);
+    collected += m.paid;
+    if(m.owed > 0){ owingCount++; owingTotal += m.owed; }
+    const leftColor = m.classesLeft < 0 ? 'color:var(--danger);font-weight:700;' : '';
+    return `<tr>
+      <td><strong>${escapeHtml(s.name)}</strong></td>
+      <td>$${m.paid}</td>
+      <td>${m.attended}</td>
+      <td style="${leftColor}">${m.classesLeft}</td>
+      <td><span class="pill ${m.cls}">${m.status}</span></td>
+      <td style="white-space:nowrap;text-align:right;">
+        <button class="btn btn-primary btn-sm" onclick="openPaymentModal('${s.id}')">+ Payment</button>
+        <button class="btn btn-outline btn-sm" onclick="openPayHistory('${s.id}')">History</button>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('payStats').innerHTML = `
+    <div class="stat"><div class="num">$${collected}</div><div class="label">Total Collected</div></div>
+    <div class="stat"><div class="num">${owingCount}</div><div class="label">Students Owing</div></div>
+    <div class="stat"><div class="num">$${owingTotal}</div><div class="label">Total Owed</div></div>`;
+}
+/* attendance/roster changes also affect payment numbers */
+const _renderAttTable = renderAttendanceTable;
+renderAttendanceTable = function(){ _renderAttTable(); if(isAdmin) renderPayments(); };
+
+window.openPaymentModal = async (studentId='') => {
+  if(!isAdmin) return;
+  document.getElementById('payStudent').innerHTML =
+    studentsCache.map(s => `<option value="${escapeAttr(s.id)}">${escapeHtml(s.name)}</option>`).join('');
+  if(studentId) document.getElementById('payStudent').value = studentId;
+  document.getElementById('payAmount').value = Number(paySettings.price) || 120;
+  document.getElementById('payNote').value = '';
+  const ct = await getCentralTime();
+  document.getElementById('payDate').value = ct.date;
+  openOverlay('payOverlay');
+};
+document.getElementById('addPaymentBtn').onclick = () => openPaymentModal();
+document.getElementById('paySaveBtn').onclick = async () => {
+  if(!isAdmin) return;
+  const studentId = document.getElementById('payStudent').value;
+  const amount = Number(document.getElementById('payAmount').value);
+  const date = document.getElementById('payDate').value;
+  const note = document.getElementById('payNote').value.trim();
+  if(!studentId){ showToast('Pick a student'); return; }
+  if(!(amount > 0)){ showToast('Enter an amount'); return; }
+  try{
+    await paymentsCol.add({
+      studentId, amount, date, note,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeOverlay('payOverlay');
+    showToast('Payment saved');
+  }catch(e){ showToast('Error: ' + e.message); }
+};
+
+window.openPayHistory = (studentId) => {
+  const s = studentsCache.find(x => x.id === studentId);
+  if(!s) return;
+  document.getElementById('payHistoryTitle').textContent = `Payments — ${s.name}`;
+  const list = paymentsCache.filter(p => p.studentId === studentId)
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''));
+  document.getElementById('payHistoryList').innerHTML = list.length
+    ? list.map(p => `<li>
+        <span class="name">${escapeHtml(p.date||'')} ${p.note ? '· ' + escapeHtml(p.note) : ''}</span>
+        <strong>$${Number(p.amount)||0}</strong>
+        <button class="btn btn-danger btn-sm" onclick="deletePayment('${p.id}')">Delete</button>
+      </li>`).join('')
+    : '<li>No payments logged yet.</li>';
+  openOverlay('payHistoryOverlay');
+};
+window.deletePayment = (id) => {
+  askConfirm('Delete this payment?', 'This removes it from the totals. This cannot be undone.', async () => {
+    await paymentsCol.doc(id).delete();
+    closeOverlay('payHistoryOverlay');
+    showToast('Payment deleted');
+  }, 'Delete');
+};
+
+document.getElementById('paySettingsBtn').onclick = () => {
+  document.getElementById('setPrice').value = Number(paySettings.price) || 120;
+  document.getElementById('setClasses').value = Number(paySettings.classesPerBlock) || 8;
+  openOverlay('paySettingsOverlay');
+};
+document.getElementById('setSaveBtn').onclick = async () => {
+  const price = Number(document.getElementById('setPrice').value);
+  const classesPerBlock = Number(document.getElementById('setClasses').value);
+  if(!(price > 0) || !(classesPerBlock > 0)){ showToast('Enter valid numbers'); return; }
+  await paySettingsDoc.set({ price, classesPerBlock }, { merge:true });
+  closeOverlay('paySettingsOverlay');
+  showToast('Settings saved');
+};
+
 /* ---------------- RESET DATA (admin) — News & Materials only, attendance is never touched here ---------------- */
 document.getElementById('resetNewsBtn').onclick = () => {
   closeOverlay('resetOverlay');
@@ -1048,6 +1307,7 @@ function renderAll(){ /* snapshots auto-refresh; this just toggles admin-only vi
 }
 
 setAdminUI();
+if(isAdmin) startPaymentListeners();
 </script>
 </body>
 </html>
